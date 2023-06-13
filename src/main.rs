@@ -2,7 +2,7 @@ mod command;
 mod config;
 
 use clap::Parser;
-use log::{debug, warn, trace};
+use log::{debug, trace, warn};
 use std::collections::{HashMap, HashSet};
 use std::str;
 use xrandr::{XHandle, XrandrError};
@@ -29,8 +29,13 @@ fn main() {
     let outputs_by_edid = index_outputs_by_id(outputs);
     let current_edids: HashSet<String> = outputs_by_edid.keys().cloned().collect();
 
-    if let Some((profile_name, profile)) = find_matching_profile(cfg.profiles.iter().collect(), current_edids) {
-        debug!("applying profile {} with setup {:?}", profile_name, profile.setup);
+    if let Some((profile_name, profile)) =
+        find_matching_profile(cfg.profiles.iter().collect(), current_edids)
+    {
+        debug!(
+            "applying profile {} with setup {:?}",
+            profile_name, profile.setup
+        );
         let cmd_args = compute_cmd_args(outputs_by_edid, profile);
         command::run_command("xrandr", cmd_args, args.dry_run);
     } else {
