@@ -1,7 +1,7 @@
 # Maintainer: sebdotv <sebdotv@gmail.com>
 _name=yaar
 pkgname=$_name-git
-pkgver=r5.6c86578
+pkgver=r8.37609f5
 pkgrel=1
 pkgdesc="Yet Another Autorandr"
 arch=('x86_64')
@@ -16,7 +16,7 @@ replaces=()
 backup=()
 options=()
 install=
-source=('git+https://github.com/sebdotv/yaar.git')
+source=('git+https://github.com/sebdotv/yaar.git#branch=autostart')
 noextract=()
 sha512sums=('SKIP')
 
@@ -47,4 +47,5 @@ check() {
 
 package() {
     install -Dm0755 -t "$pkgdir/usr/bin/" "target/release/$_name"
+    install -Dm644 -t "${pkgdir}"/etc/xdg/autostart/ "$_name/packaging/$_name-kde.desktop"
 }
