@@ -2,6 +2,9 @@ mod command;
 mod config;
 
 use clap::Parser;
+use command::run_command;
+use config::load_config;
+use config::{OutputMode, Profile};
 use log::{debug, info, trace, warn};
 use std::collections::{HashMap, HashSet};
 use std::str;
@@ -9,6 +12,10 @@ use xrandr::{XHandle, XrandrError};
 
 #[derive(clap::Parser, Debug)]
 struct Args {
+    /// List available profiles with current connected devices
+    #[arg(short, long)]
+    list: bool,
+
     /// Dry-run (do not make any changes to the system)
     #[arg(short, long)]
     dry_run: bool,
@@ -22,7 +29,7 @@ fn main() {
     let args = Args::parse();
     init_logger(args.verbose);
 
-    let cfg = config::load_config();
+    let cfg = load_config();
     debug!("loaded config with {} profiles", cfg.profiles.len());
 
     let outputs = get_xrandr_outputs().expect("failed to get xrandr ouputs");
@@ -37,25 +44,32 @@ fn main() {
             profile_name, profile.setup
         );
         let cmd_args = compute_cmd_args(outputs_by_edid, profile);
-        command::run_command("xrandr", cmd_args, args.dry_run);
+        run_command("xrandr", cmd_args, args.dry_run);
         info!("Successfully applied profile {}", profile_name);
     } else {
         warn!("No matching profile found");
     }
 }
 
-fn find_matching_profile<'a>(
-    candidate_profiles: Vec<(&'a String, &'a config::Profile)>,
+pub fn list_matching_profiles<'a>(
+    candidate_profiles: Vec<(&'a String, &'a Profile)>,
     current_edids: HashSet<String>,
-) -> Option<(&'a String, &'a config::Profile)> {
-    let matching_profile_entries: Vec<(&String, &config::Profile)> = candidate_profiles
+) -> Vec<(&'a String, &'a Profile)> {
+    candidate_profiles
         .into_iter()
         .filter(|(profile_name, profile)| {
             trace!("trying profile {}", profile_name);
             let profile_edids: HashSet<String> = profile.outputs.values().cloned().collect();
             profile_edids == current_edids
         })
-        .collect();
+        .collect()
+}
+
+fn find_matching_profile<'a>(
+    candidate_profiles: Vec<(&'a String, &'a Profile)>,
+    current_edids: HashSet<String>,
+) -> Option<(&'a String, &'a Profile)> {
+    let matching_profile_entries = list_matching_profiles(candidate_profiles, current_edids);
 
     match matching_profile_entries.as_slice() {
         [] => None,
@@ -66,7 +80,7 @@ fn find_matching_profile<'a>(
 
 fn compute_cmd_args(
     outputs_by_edid: HashMap<String, xrandr::Output>,
-    profile: &config::Profile,
+    profile: &Profile,
 ) -> Vec<String> {
     let primary_output_key = get_primary_output_key(profile);
     debug!("primary_output_key: {}", primary_output_key);
@@ -89,9 +103,9 @@ fn compute_cmd_args(
             let output = get_output_by_key(output_key);
             let mut args1 = vec!["--output", output.name.as_str()];
             let args2 = match output_mode {
-                config::OutputMode::Off => vec!["--off"],
-                config::OutputMode::Primary => vec!["--auto", "--primary"],
-                config::OutputMode::Secondary => vec![
+                OutputMode::Off => vec!["--off"],
+                OutputMode::Primary => vec!["--auto", "--primary"],
+                OutputMode::Secondary => vec![
                     "--auto",
                     "--right-of",
                     get_output_by_key(primary_output_key).name.as_str(),
@@ -105,12 +119,12 @@ fn compute_cmd_args(
     all_args.into_iter().map(String::from).collect()
 }
 
-fn get_primary_output_key(profile: &config::Profile) -> &String {
+fn get_primary_output_key(profile: &Profile) -> &String {
     let primary_output_keys: Vec<&String> = profile
         .setup
         .iter()
         .filter_map(|(output_key, output_mode)| match output_mode {
-            config::OutputMode::Primary => Some(output_key),
+            OutputMode::Primary => Some(output_key),
             _ => None,
         })
         .collect();
