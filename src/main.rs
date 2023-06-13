@@ -2,7 +2,7 @@ mod command;
 mod config;
 
 use clap::Parser;
-use log::{debug, trace, warn};
+use log::{debug, info, trace, warn};
 use std::collections::{HashMap, HashSet};
 use std::str;
 use xrandr::{XHandle, XrandrError};
@@ -38,6 +38,7 @@ fn main() {
         );
         let cmd_args = compute_cmd_args(outputs_by_edid, profile);
         command::run_command("xrandr", cmd_args, args.dry_run);
+        info!("Successfully applied profile {}", profile_name);
     } else {
         warn!("No matching profile found");
     }
