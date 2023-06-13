@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Yet Another Autorandr
+Comment=Automatically select a display configuration based on connected devices
+Type=Application
+Exec=/usr/bin/yaar -vv
+X-Desktop-File-Install-Version=0.26
+OnlyShowIn=KDE;
