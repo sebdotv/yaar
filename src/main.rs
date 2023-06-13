@@ -36,46 +36,61 @@ fn main() {
     let outputs_by_edid = index_outputs_by_id(outputs);
     let current_edids: HashSet<String> = outputs_by_edid.keys().cloned().collect();
 
-    if let Some((profile_name, profile)) =
-        find_matching_profile(cfg.profiles.iter().collect(), current_edids)
-    {
-        debug!(
-            "applying profile {} with setup {:?}",
-            profile_name, profile.setup
+    let matching_profiles = list_matching_profiles(cfg.profiles.iter().collect(), current_edids);
+    if args.list {
+        info!(
+            "matching profiles:\n{}",
+            matching_profiles
+                .iter()
+                .map(|(profile_name, _, perfect_match)| format!(
+                    "{}{}",
+                    profile_name,
+                    if *perfect_match { " [perfect]" } else { "" }
+                ))
+                .collect::<Vec<_>>()
+                .join("\n")
         );
-        let cmd_args = compute_cmd_args(outputs_by_edid, profile);
-        run_command("xrandr", cmd_args, args.dry_run);
-        info!("Successfully applied profile {}", profile_name);
     } else {
-        warn!("No matching profile found");
+        match matching_profiles
+            .iter()
+            .filter_map(|(profile_name, profile, perfect_match)| {
+                perfect_match.then_some((profile_name, profile))
+            })
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
+            [] => warn!("No matching profiles found"),
+            &[(profile_name, profile)] => {
+                debug!(
+                    "applying profile {} with setup {:?}",
+                    profile_name, profile.setup
+                );
+                let cmd_args = compute_cmd_args(outputs_by_edid, profile);
+                run_command("xrandr", cmd_args, args.dry_run);
+                info!("Successfully applied profile {}", profile_name);
+            }
+            _ => panic!("expected at most 1 perfect matching profile"),
+        }
     }
 }
 
 pub fn list_matching_profiles<'a>(
     candidate_profiles: Vec<(&'a String, &'a Profile)>,
     current_edids: HashSet<String>,
-) -> Vec<(&'a String, &'a Profile)> {
+) -> Vec<(&'a String, &'a Profile, bool)> {
     candidate_profiles
         .into_iter()
-        .filter(|(profile_name, profile)| {
+        .filter_map(|(profile_name, profile)| {
             trace!("trying profile {}", profile_name);
             let profile_edids: HashSet<String> = profile.outputs.values().cloned().collect();
-            profile_edids == current_edids
+            // keeps profile only if it is a subset of current_edids; return whether it is a perfect match
+            profile_edids.is_subset(&current_edids).then_some((
+                profile_name,
+                profile,
+                profile_edids == current_edids,
+            ))
         })
         .collect()
-}
-
-fn find_matching_profile<'a>(
-    candidate_profiles: Vec<(&'a String, &'a Profile)>,
-    current_edids: HashSet<String>,
-) -> Option<(&'a String, &'a Profile)> {
-    let matching_profile_entries = list_matching_profiles(candidate_profiles, current_edids);
-
-    match matching_profile_entries.as_slice() {
-        [] => None,
-        &[(profile_name, profile)] => Some((profile_name, profile)),
-        _ => panic!("expected exactly 1 primary"),
-    }
 }
 
 fn compute_cmd_args(
