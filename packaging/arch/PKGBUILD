@@ -1,0 +1,50 @@
+# Maintainer: sebdotv <sebdotv@gmail.com>
+_name=yaar
+pkgname=$_name-git
+pkgver=r2.cb357d0
+pkgrel=1
+pkgdesc="Yet Another Autorandr"
+arch=('x86_64')
+url="https://github.com/sebdotv/yaar"
+license=('MIT')
+groups=()
+depends=()
+makedepends=('git' 'cargo')
+provides=("$_name")
+conflicts=("$_name")
+replaces=()
+backup=()
+options=()
+install=
+source=('git+https://github.com/sebdotv/yaar.git')
+noextract=()
+sha512sums=('SKIP')
+
+# Please refer to the 'USING VCS SOURCES' section of the PKGBUILD man page for
+# a description of each element in the source array.
+
+pkgver() {
+    # use number of revisions since beginning of the history:
+    cd "$_name"
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+prepare() {
+    export RUSTUP_TOOLCHAIN=stable
+    cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+}
+
+build() {
+    export RUSTUP_TOOLCHAIN=stable
+    export CARGO_TARGET_DIR=target
+    cargo build --frozen --release --all-features
+}
+
+check() {
+    export RUSTUP_TOOLCHAIN=stable
+    cargo test --frozen --all-features
+}
+
+package() {
+    install -Dm0755 -t "$pkgdir/usr/bin/" "target/release/$_name"
+}
