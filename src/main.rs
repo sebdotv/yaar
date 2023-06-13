@@ -13,8 +13,12 @@ use xrandr::{XHandle, XrandrError};
 #[derive(clap::Parser, Debug)]
 struct Args {
     /// List available profiles with current connected devices
-    #[arg(short, long)]
+    #[arg(short, long, group = "action")]
     list: bool,
+
+    /// Name of the profile to apply (by default, the only perfect match is applied)
+    #[arg(short, long, group = "action")]
+    profile: Option<String>,
 
     /// Dry-run (do not make any changes to the system)
     #[arg(short, long)]
@@ -53,23 +57,24 @@ fn main() {
     } else {
         match matching_profiles
             .iter()
-            .filter_map(|(profile_name, profile, perfect_match)| {
-                perfect_match.then_some((profile_name, profile))
+            .filter(|(profile_name, _, perfect_match)| match args.profile {
+                Some(ref profile_name_arg) => *profile_name == profile_name_arg,
+                None => *perfect_match,
             })
             .collect::<Vec<_>>()
             .as_slice()
         {
             [] => warn!("No matching profiles found"),
-            &[(profile_name, profile)] => {
+            &[(profile_name, profile, perfect_match)] => {
                 debug!(
-                    "applying profile {} with setup {:?}",
-                    profile_name, profile.setup
+                    "applying profile {} (perfect match: {}) with setup {:?}",
+                    profile_name, perfect_match, profile.setup
                 );
                 let cmd_args = compute_cmd_args(outputs_by_edid, profile);
                 run_command("xrandr", cmd_args, args.dry_run);
                 info!("Successfully applied profile {}", profile_name);
             }
-            _ => panic!("expected at most 1 perfect matching profile"),
+            _ => panic!("expected at most 1 matching profile"),
         }
     }
 }
