@@ -1,7 +1,7 @@
 # Maintainer: sebdotv <sebdotv@gmail.com>
 _name=yaar
 pkgname=$_name-git
-pkgver=r2.cb357d0
+pkgver=r5.6c86578
 pkgrel=1
 pkgdesc="Yet Another Autorandr"
 arch=('x86_64')
