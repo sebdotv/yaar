@@ -38,7 +38,9 @@ fn main() {
         );
         let cmd_args = compute_cmd_args(outputs_by_edid, profile);
         command::run_command("xrandr", cmd_args, args.dry_run);
-        info!("Successfully applied profile {}", profile_name);
+        if !args.dry_run {
+            info!("Successfully applied profile {}", profile_name);
+        }
     } else {
         warn!("No matching profile found");
     }
