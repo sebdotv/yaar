@@ -25,7 +25,7 @@ fn main() {
     let cfg = config::load_config();
     debug!("loaded config with {} profiles", cfg.profiles.len());
 
-    let outputs = get_xrandr_outputs().expect("failed to get xrandr ouputs");
+    let outputs = get_xrandr_outputs().expect("failed to get xrandr outputs");
     let outputs_by_edid = index_outputs_by_id(outputs);
     let current_edids: HashSet<String> = outputs_by_edid.keys().cloned().collect();
 
