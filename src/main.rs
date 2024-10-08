@@ -1,7 +1,9 @@
 mod command;
 mod config;
 mod devices;
+mod output;
 
+use crate::devices::list_edid_devices;
 use clap::Parser;
 use log::{debug, info, trace, warn};
 use std::collections::{HashMap, HashSet};
@@ -26,7 +28,8 @@ fn main() {
     let cfg = config::load_config();
     debug!("loaded config with {} profiles", cfg.profiles.len());
 
-    let outputs = get_xrandr_outputs().expect("failed to get xrandr outputs");
+    // let outputs = get_xrandr_outputs().expect("failed to get xrandr outputs");
+    let outputs = get_devices_outputs();
     debug!("found {} outputs", outputs.len());
     if outputs.is_empty() {
         warn!("No outputs found");
@@ -77,7 +80,7 @@ fn find_matching_profile<'a>(
 }
 
 fn compute_cmd_args(
-    outputs_by_edid: HashMap<String, xrandr::Output>,
+    outputs_by_edid: HashMap<String, Output>,
     profile: &config::Profile,
 ) -> Vec<String> {
     let primary_output_key = get_primary_output_key(profile);
@@ -133,10 +136,10 @@ fn get_primary_output_key(profile: &config::Profile) -> &String {
     primary_output_key
 }
 
-fn index_outputs_by_id(outputs: Vec<xrandr::Output>) -> HashMap<String, xrandr::Output> {
+fn index_outputs_by_id(outputs: Vec<Output>) -> HashMap<String, Output> {
     let mut outputs_by_edid = HashMap::new();
     for output in outputs {
-        if let Some(edid) = output.edid() {
+        if let Some(ref edid) = output.edid {
             let prev = outputs_by_edid.insert(hex::encode(edid), output);
             assert!(prev.is_none())
         }
@@ -144,10 +147,36 @@ fn index_outputs_by_id(outputs: Vec<xrandr::Output>) -> HashMap<String, xrandr::
     outputs_by_edid
 }
 
-fn get_xrandr_outputs() -> Result<Vec<xrandr::Output>, XrandrError> {
+#[derive(Debug)]
+struct Output {
+    edid: Option<Vec<u8>>,
+    name: String,
+}
+
+#[deprecated]
+fn get_xrandr_outputs() -> Result<Vec<Output>, XrandrError> {
     let mut x_handle = XHandle::open()?;
     let outputs = x_handle.all_outputs()?;
+    let outputs = outputs
+        .iter()
+        .map(|output| Output {
+            edid: output.edid(),
+            name: output.name.clone(),
+        })
+        .collect();
     Ok(outputs)
+}
+
+fn get_devices_outputs() -> Vec<Output> {
+    let devices = list_edid_devices();
+    let outputs = devices
+        .iter()
+        .map(|device| Output {
+            edid: Some(device.edid_bytes.clone()),
+            name: device.name.clone(),
+        })
+        .collect();
+    outputs
 }
 
 fn init_logger(verbose_level: u8) {

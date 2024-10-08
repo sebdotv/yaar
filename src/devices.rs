@@ -1,15 +1,21 @@
+use itertools::Itertools;
 use pasedid::config::Config;
 use pasedid::datamodel::base_block::DisplayDescriptor;
 use pasedid::parser::edid::parse_edid;
+use std::fmt::format;
+use std::path::{Component, Path};
 use walkdir::WalkDir;
 
 #[derive(Debug)]
-struct Device {
-    product_name: String,
-    product_serial_number: Option<String>,
+pub struct Device {
+    pub name: String,
+    pub product_name: String,
+    pub product_serial_number: Option<String>,
+    pub edid_bytes: Vec<u8>,
+    pub edid_hex: String,
 }
 
-fn list_edid_devices() -> Vec<Device> {
+pub fn list_edid_devices() -> Vec<Device> {
     let mut devices = Vec::new();
     for entry in WalkDir::new("/sys/devices/") {
         let entry = entry.unwrap();
@@ -21,6 +27,8 @@ fn list_edid_devices() -> Vec<Device> {
         if bytes.is_empty() {
             continue;
         }
+
+        let name = get_device_name(entry.path());
 
         let (remaining, edid) = parse_edid(
             &bytes,
@@ -49,25 +57,35 @@ fn list_edid_devices() -> Vec<Device> {
         }
 
         assert!(product_name.is_some());
+        let product_name = product_name.unwrap();
 
         devices.push(Device {
-            product_name: product_name.unwrap(),
+            name,
+            product_name,
             product_serial_number,
+            edid_hex: hex::encode(&bytes),
+            edid_bytes: bytes,
         });
     }
 
     devices
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_list_devices_with_edid() {
-        let devices = list_edid_devices();
-        for device in devices {
-            println!("Device: {:?}", device);
-        }
-    }
+fn get_device_name(path: &Path) -> String {
+    let (c, b, a) = path
+        .components()
+        .rev()
+        .skip(1)
+        .take(3)
+        .map(|c| match c {
+            Component::Normal(s) => s.to_str().unwrap(),
+            _ => panic!("unexpected component"),
+        })
+        .collect_tuple()
+        .unwrap();
+    assert_eq!(a, "drm");
+    let name = c
+        .strip_prefix(&format!("{}-", b))
+        .expect("unexpected prefix");
+    name.to_string()
 }

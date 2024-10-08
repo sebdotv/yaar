@@ -15,3 +15,4 @@ serde = { version = "1.0.210", features = ["derive"] }
 serde_yml = "0.0.12"
 walkdir = "2.5.0"
 xrandr = "0.2.0"
+anyhow = "1.0.89"
