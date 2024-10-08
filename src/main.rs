@@ -26,7 +26,16 @@ fn main() {
     debug!("loaded config with {} profiles", cfg.profiles.len());
 
     let outputs = get_xrandr_outputs().expect("failed to get xrandr outputs");
+    debug!("found {} outputs", outputs.len());
+    if outputs.is_empty() {
+        warn!("No outputs found");
+        return;
+    }
     let outputs_by_edid = index_outputs_by_id(outputs);
+    if outputs_by_edid.is_empty() {
+        warn!("No EDID found");
+        return;
+    }
     let current_edids: HashSet<String> = outputs_by_edid.keys().cloned().collect();
 
     if let Some((profile_name, profile)) =
