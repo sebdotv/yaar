@@ -1,5 +1,6 @@
 mod command;
 mod config;
+mod devices;
 
 use clap::Parser;
 use log::{debug, info, trace, warn};
