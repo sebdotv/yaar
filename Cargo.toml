@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.3.21", features = ["derive"] }
-env_logger = "0.10.0"
+clap = { version = "4.5.19", features = ["derive"] }
+env_logger = "0.11.5"
 hex = "0.4.3"
-indexmap = { version = "2.0.0", features = ["serde"] }
-itertools = "0.11.0"
-log = "0.4.20"
-serde = { version = "1.0.183", features = ["derive"] }
-serde_yaml = "0.9.25"
+indexmap = { version = "2.6.0", features = ["serde"] }
+itertools = "0.13.0"
+log = "0.4.22"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_yaml = "0.9.34"
 xrandr = "0.2.0"
