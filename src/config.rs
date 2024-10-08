@@ -36,7 +36,7 @@ pub fn load_config() -> Config {
     info!("Loading user config from file: {:?}", config_file);
 
     let cfg_str = fs::read_to_string(config_file).expect("failed to read YAML config file");
-    let cfg: Config = serde_yaml::from_str(&cfg_str).expect("failed to parse config");
+    let cfg: Config = serde_yml::from_str(&cfg_str).expect("failed to parse config");
     cfg
 }
 

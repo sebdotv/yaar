@@ -11,5 +11,5 @@ indexmap = { version = "2.6.0", features = ["serde"] }
 itertools = "0.13.0"
 log = "0.4.22"
 serde = { version = "1.0.210", features = ["derive"] }
-serde_yaml = "0.9.34"
+serde_yml = "0.0.12"
 xrandr = "0.2.0"
