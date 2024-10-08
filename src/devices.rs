@@ -2,7 +2,6 @@ use itertools::Itertools;
 use pasedid::config::Config;
 use pasedid::datamodel::base_block::DisplayDescriptor;
 use pasedid::parser::edid::parse_edid;
-use std::fmt::format;
 use std::path::{Component, Path};
 use walkdir::WalkDir;
 
