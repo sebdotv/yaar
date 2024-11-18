@@ -8,7 +8,6 @@ use clap::Parser;
 use log::{debug, info, trace, warn};
 use std::collections::{HashMap, HashSet};
 use std::str;
-use xrandr::{XHandle, XrandrError};
 
 #[derive(clap::Parser, Debug)]
 struct Args {
@@ -151,20 +150,6 @@ fn index_outputs_by_id(outputs: Vec<Output>) -> HashMap<String, Output> {
 struct Output {
     edid: Option<Vec<u8>>,
     name: String,
-}
-
-#[deprecated]
-fn get_xrandr_outputs() -> Result<Vec<Output>, XrandrError> {
-    let mut x_handle = XHandle::open()?;
-    let outputs = x_handle.all_outputs()?;
-    let outputs = outputs
-        .iter()
-        .map(|output| Output {
-            edid: output.edid(),
-            name: output.name.clone(),
-        })
-        .collect();
-    Ok(outputs)
 }
 
 fn get_devices_outputs() -> Vec<Output> {
