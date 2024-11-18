@@ -27,7 +27,7 @@ pub fn list_edid_devices() -> Vec<Device> {
             continue;
         }
 
-        let name = get_device_name(entry.path());
+        let name = device_name_from_path(entry.path());
 
         let (remaining, edid) = parse_edid(
             &bytes,
@@ -70,7 +70,7 @@ pub fn list_edid_devices() -> Vec<Device> {
     devices
 }
 
-fn get_device_name(path: &Path) -> String {
+fn device_name_from_path(path: &Path) -> String {
     let (c, b, a) = path
         .components()
         .rev()
